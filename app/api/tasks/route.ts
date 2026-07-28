@@ -3,14 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const {title, description} = body;
+  const { title, description } = body;
 
   const task = await prisma.task.create({
     data: {
       title: title,
-      description: description
-    }
-  })
+      description: description,
+    },
+  });
 
   // success response
   return NextResponse.json(
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       message: "Berhasil menambahkan tugas baru.",
       data: task,
     },
-    { status: 200 }
+    { status: 201 },
   );
 }
 
@@ -33,7 +33,6 @@ export async function GET() {
       message: "Berhasil mengambil semua tugas",
       data: tasks,
     },
-    { status: 200 }
+    { status: 200 },
   );
 }
-
