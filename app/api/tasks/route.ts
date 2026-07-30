@@ -1,10 +1,11 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { createTaskSchema } from "@/lib/validations";
 import { NextRequest, NextResponse } from "next/server";
+import z from "zod";
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { title, description } = body;
 
   const session = await auth.api.getSession({
     headers: request.headers,
@@ -14,15 +15,31 @@ export async function POST(request: NextRequest) {
   // error response
   if (!userId) {
     return NextResponse.json(
-      { status: "error", message: "Unauthorized" },
+      {
+        status: "error",
+        message: "Unauthorized",
+      },
       { status: 401 },
+    );
+  }
+
+  const parsed = createTaskSchema.safeParse(body);
+
+  // error response
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        status: "error",
+        message: z.prettifyError(parsed.error),
+      },
+      { status: 400 },
     );
   }
 
   const task = await prisma.task.create({
     data: {
-      title: title,
-      description: description,
+      title: parsed.data.title,
+      description: parsed.data.description,
       userId: userId,
     },
   });

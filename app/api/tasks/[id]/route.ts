@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { updateTaskSchema } from "@/lib/validations";
 import { NextRequest, NextResponse } from "next/server";
+import z from "zod";
 
 export async function GET(
   request: NextRequest,
@@ -57,7 +59,18 @@ export async function PATCH(
 
   const { id } = await ctx.params;
   const body = await request.json();
-  const { title, description } = body;
+  const parsed = updateTaskSchema.safeParse(body);
+
+  // error response
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        status: "error",
+        message: z.prettifyError(parsed.error),
+      },
+      { status: 400 },
+    );
+  }
 
   const task = await prisma.task.update({
     where: {
@@ -65,8 +78,8 @@ export async function PATCH(
       userId: userId,
     },
     data: {
-      title: title,
-      description: description,
+      title: parsed.data.title,
+      description: parsed.data.description,
     },
   });
 
