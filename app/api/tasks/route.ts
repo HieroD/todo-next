@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   });
   const userId = session?.user.id;
 
-  // error response
+  // authorization error response
   if (!userId) {
     return NextResponse.json(
       {
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
   const parsed = createTaskSchema.safeParse(body);
 
-  // error response
+  // validation error response
   if (!parsed.success) {
     return NextResponse.json(
       {

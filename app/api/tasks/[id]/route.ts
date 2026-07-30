@@ -13,7 +13,7 @@ export async function GET(
   });
   const userId = session?.user?.id;
 
-  // error response
+  // authorization error response
   if (!userId) {
     return NextResponse.json(
       { status: "error", message: "Unauthorized" },
@@ -22,12 +22,20 @@ export async function GET(
   }
 
   const { id } = await ctx.params;
-  const task = await prisma.task.findUnique({
+  const task = await prisma.task.findFirst({
     where: {
       id: Number(id),
       userId: userId,
     },
   });
+
+  // not found error response
+  if (!task) {
+    return NextResponse.json(
+      { status: "error", message: "Task not found." },
+      { status: 404 },
+    );
+  }
 
   // success response
   return NextResponse.json(
@@ -49,7 +57,7 @@ export async function PATCH(
   });
   const userId = session?.user?.id;
 
-  // error response
+  // authorization error response
   if (!userId) {
     return NextResponse.json(
       { status: "error", message: "Unauthorized" },
@@ -58,10 +66,25 @@ export async function PATCH(
   }
 
   const { id } = await ctx.params;
+  const existingTask = await prisma.task.findFirst({
+    where: {
+      id: Number(id),
+      userId: userId,
+    },
+  });
+
+  // not found error response
+  if (!existingTask) {
+    return NextResponse.json(
+      { status: "error", message: "Task not found." },
+      { status: 404 },
+    );
+  }
+
   const body = await request.json();
   const parsed = updateTaskSchema.safeParse(body);
 
-  // error response
+  // validation error response
   if (!parsed.success) {
     return NextResponse.json(
       {
@@ -74,12 +97,11 @@ export async function PATCH(
 
   const task = await prisma.task.update({
     where: {
-      id: Number(id),
-      userId: userId,
+      id: Number(id)
     },
     data: {
-      title: parsed.data.title,
-      description: parsed.data.description,
+      title: parsed.data.title ?? existingTask.title,
+      description: parsed.data.description ?? existingTask.description,
     },
   });
 
@@ -103,7 +125,7 @@ export async function DELETE(
   });
   const userId = session?.user?.id;
 
-  // error response
+  // authorization error response
   if (!userId) {
     return NextResponse.json(
       { status: "error", message: "Unauthorized" },
