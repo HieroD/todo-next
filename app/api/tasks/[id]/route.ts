@@ -97,11 +97,12 @@ export async function PATCH(
 
   const task = await prisma.task.update({
     where: {
-      id: Number(id)
+      id: Number(id),
     },
     data: {
       title: parsed.data.title ?? existingTask.title,
       description: parsed.data.description ?? existingTask.description,
+      status: parsed.data.status ?? existingTask.status,
     },
   });
 
