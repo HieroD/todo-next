@@ -5,8 +5,6 @@ import { NextRequest, NextResponse } from "next/server";
 import z from "zod";
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-
   const session = await auth.api.getSession({
     headers: request.headers,
   });
@@ -23,6 +21,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const body = await request.json();
   const parsed = createTaskSchema.safeParse(body);
 
   // validation error response
@@ -36,23 +35,34 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const task = await prisma.task.create({
-    data: {
-      title: parsed.data.title,
-      description: parsed.data.description,
-      userId: userId,
-    },
-  });
+  try {
+    const task = await prisma.task.create({
+      data: {
+        title: parsed.data.title,
+        description: parsed.data.description,
+        userId: userId,
+      },
+    });
 
-  // success response
-  return NextResponse.json(
-    {
-      status: "success",
-      message: "Berhasil menambahkan tugas baru.",
-      data: task,
-    },
-    { status: 201 },
-  );
+    // success response
+    return NextResponse.json(
+      {
+        status: "success",
+        message: "Berhasil menambahkan tugas baru.",
+        data: task,
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        status: "error",
+        message: "Something went wrong.",
+        data: null,
+      },
+      { status: 500 },
+    );
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -61,7 +71,7 @@ export async function GET(request: NextRequest) {
   });
   const userId = session?.user.id;
 
-  // error response
+  // authorization error response
   if (!userId) {
     return NextResponse.json(
       { status: "error", message: "Unauthorized" },
@@ -69,19 +79,30 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const tasks = await prisma.task.findMany({
-    where: {
-      userId: userId,
-    },
-  });
+  try {
+    const tasks = await prisma.task.findMany({
+      where: {
+        userId: userId,
+      },
+    });
 
-  // success response
-  return NextResponse.json(
-    {
-      status: "success",
-      message: "Berhasil mengambil semua tugas",
-      data: tasks,
-    },
-    { status: 200 },
-  );
+    // success response
+    return NextResponse.json(
+      {
+        status: "success",
+        message: "Berhasil mengambil semua tugas",
+        data: tasks,
+      },
+      { status: 200 },
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        status: "error",
+        message: "Something went wrong.",
+        data: null,
+      },
+      { status: 500 },
+    );
+  }
 }
